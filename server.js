@@ -89,7 +89,7 @@ function getOrCreateUser(url, request) {
   } else {
     response.status = 400;
   }
-  console.log(database.users);
+  
   return response;
 }
 
