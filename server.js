@@ -253,6 +253,8 @@ function downvote(item, username) {
   return item;
 }
 
+// Comment logic
+
 function createComment(url, request){
   const requestComment = request.body && request.body.comment;
   const response = {};
@@ -361,6 +363,8 @@ function downvoteComment(url, request){
 
   return response;
 }
+
+// YAML database read and write logic
 
 const yaml = require('js-yaml');
 const fs   = require('fs');
