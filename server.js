@@ -2,7 +2,9 @@
 let database = {
   users: {},
   articles: {},
-  nextArticleId: 1
+  comments: {},
+  nextArticleId: 1,
+  nextCommentId: 1
 };
 
 const routes = {
@@ -26,6 +28,19 @@ const routes = {
   },
   '/articles/:id/downvote': {
     'PUT': downvoteArticle
+  },
+  '/comments': {
+    'POST': createComment
+  },
+  '/comments/:id': {
+    'PUT': updateComment,
+    'DELETE': deleteComment
+  },
+  '/comments/:id/upvote': {
+    'PUT': upvoteComment
+  },
+  '/comments/:id/downvote': {
+    'PUT': downvoteComment
   }
 };
 
@@ -74,7 +89,7 @@ function getOrCreateUser(url, request) {
   } else {
     response.status = 400;
   }
-
+  console.log(database.users);
   return response;
 }
 
@@ -115,7 +130,6 @@ function getArticle(url, request) {
 function createArticle(url, request) {
   const requestArticle = request.body && request.body.article;
   const response = {};
-
   if (requestArticle && requestArticle.title && requestArticle.url &&
       requestArticle.username && database.users[requestArticle.username]) {
     const article = {
@@ -136,7 +150,6 @@ function createArticle(url, request) {
   } else {
     response.status = 400;
   }
-
   return response;
 }
 
@@ -238,6 +251,137 @@ function downvote(item, username) {
     item.downvotedBy.push(username);
   }
   return item;
+}
+
+function createComment(url, request){
+  const requestComment = request.body && request.body.comment;
+  const response = {};
+  if (requestComment && requestComment.body && requestComment.username && requestComment.articleId &&
+      database.users[requestComment.username] && database.articles[requestComment.articleId]) {
+    const comment = {
+      id: database.nextCommentId++,
+      body: requestComment.body,
+      username: requestComment.username,
+      articleId: requestComment.articleId,
+      upvotedBy: [],
+      downvotedBy: []
+    }
+
+    database.comments[comment.id] = comment;
+    database.users[comment.username].commentIds.push(comment.id);
+    database.articles[comment.articleId].commentIds.push(comment.id);
+
+    response.body = { comment: comment };
+    response.status = 201;
+  } else {
+    response.status = 400;
+  }
+
+  return response;
+}
+
+function updateComment(url, request){
+
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  const savedComment = database.comments[id];
+  const requestComment = request.body && request.body.comment;
+  const response = {};
+
+  if (!id || !requestComment) {
+    response.status = 400;
+  } else if (!savedComment) {
+    response.status = 404;
+  } else {
+    savedComment.body = requestComment.body || savedComment.body;
+
+    response.body = { comment: savedComment };
+    response.status = 200;
+  }
+
+  return response;
+}
+
+function deleteComment(url, request){
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  const savedComment = database.comments[id];
+  const response = {};
+
+  if (!savedComment) {
+    response.status = 404;
+  } else if (savedComment) {
+    database.comments[id] = null;
+
+    const userCommentIds = database.users[savedComment.username].commentIds;
+    userCommentIds.splice(userCommentIds.indexOf(id), 1);
+
+    const articleCommentIds = database.articles[savedComment.articleId].commentIds;
+    articleCommentIds.splice(articleCommentIds.indexOf(id), 1);
+
+    response.status = 204;
+
+  } else {
+    response.status = 400;
+  }
+
+  return response;
+}
+
+function upvoteComment(url, request){
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  const username = request.body && request.body.username;
+  let savedComment = database.comments[id];
+  const response = {};
+
+  if (savedComment && username && id && database.users[username]) {
+    savedComment = upvote(savedComment, username);
+
+    response.body = { comment: savedComment };
+    response.status = 200;
+  } else {
+    response.status = 400;
+  }
+
+  return response;
+}
+
+function downvoteComment(url, request){
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  const username = request.body && request.body.username;
+  let savedComment = database.comments[id];
+  const response = {};
+
+  if (savedComment && username && id && database.users[username]) {
+    savedComment = downvote(savedComment, username);
+
+    response.body = { comment: savedComment };
+    response.status = 200;
+  } else {
+    response.status = 400;
+  }
+
+  return response;
+}
+
+const yaml = require('js-yaml');
+const fs   = require('fs');
+
+function loadDatabase() {
+
+
+  try {
+    const loadedDatabase = yaml.safeLoad(fs.readFileSync('database.yml', 'utf8'));
+    console.log('Database Loaded');
+    return loadedDatabase;
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+function saveDatabase() {
+  const updatedDatabase = yaml.safeDump(database);
+  fs.writeFile('database.yml', updatedDatabase, function (err) {
+    if (err) {throw err};
+  });
 }
 
 // Write all code above this line.

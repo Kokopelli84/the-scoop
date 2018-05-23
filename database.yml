@@ -1,0 +1,29 @@
+users:
+  kokopelli:
+    username: kokopelli
+    articleIds:
+      - 1
+    commentIds:
+      - 1
+articles:
+  '1':
+    id: 1
+    title: Mark Zuckerberg ripped by European Parliament for dodging questions
+    url: >-
+      http://money.cnn.com/2018/05/22/technology/mark-zuckerberg-european-parliament/index.html
+    username: kokopelli
+    commentIds:
+      - 1
+    upvotedBy: []
+    downvotedBy: []
+    comments: []
+comments:
+  '1':
+    id: 1
+    body: Better luck next time Mark!
+    username: kokopelli
+    articleId: 1
+    upvotedBy: []
+    downvotedBy: []
+nextArticleId: 2
+nextCommentId: 2
